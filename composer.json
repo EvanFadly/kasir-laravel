@@ -6,8 +6,10 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.0",
         "laravel/framework": "^11.9",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "milon/barcode": "^11.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -23,7 +25,8 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": ["app/Helper/helper.php"]
     },
     "autoload-dev": {
         "psr-4": {

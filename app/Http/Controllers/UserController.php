@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -90,5 +91,26 @@ class UserController extends Controller
         }else{
             return redirect()->route('register')->with('error', 'Registrasi Gagal');
         }
+    }
+
+    public function loginCheck(Request $request)
+    {
+        $validate = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        if(Auth::attempt($validate)) {
+            $request->session()->regenerate();
+            return redirect()->intended('/dashboard');
+        }else{
+            return back()->with('error', 'Login Gagal Username / Password Salah');
+        }
+    }
+
+    public function logout()
+    {
+        Auth::logout();
+        return redirect()->route('login')->with('success', 'Logout Berhasilh');
     }
 }

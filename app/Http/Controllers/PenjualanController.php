@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bayar;
+use App\Models\DetailPenjualan;
 use App\Models\penjualan;
+use App\Models\Produk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PenjualanController extends Controller
 {
@@ -12,7 +16,12 @@ class PenjualanController extends Controller
      */
     public function index()
     {
-        //
+        $title = 'Penjualan';
+        $subtitle = 'index';
+        $penjualans = Penjualan::join('users', 'penjualans.UsersId', '=', 'users.id')
+        ->Leftjoin('bayars', 'penjualans.id', '=', 'bayars.PenjualanId')
+        ->select('penjualans.id', 'penjualans.TanggalPenjualan', 'users.name', 'penjualans.TotalHarga', 'bayars.StatusBayar')->get();
+        return view('admin.penjualan.index', compact('penjualans', 'title', 'subtitle'));
     }
 
     /**
@@ -20,7 +29,10 @@ class PenjualanController extends Controller
      */
     public function create()
     {
-        //
+        $title = 'Penjualan';
+        $subtitle = 'create';
+        $produks = Produk::where('Stok', '>', 0)->get();
+        return view('admin.penjualan.create', compact('title', 'subtitle', 'produks'));
     }
 
     /**
@@ -28,7 +40,26 @@ class PenjualanController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validate = $request->validate([
+            'ProdukId' => 'required',
+            'JumlahProduk' => 'required',
+        ]);
+        $data_penjualan = [
+            'TanggalPenjualan' => date('Y-m-d'),
+            'UsersId' => Auth::user()->id,
+            'TotalHarga' => $request->input('total'),
+        ];
+        $simpanPenjualan = Penjualan::create($data_penjualan);
+        foreach ($request->ProdukId as $key => $ProdukId) {
+            $simpanDetailPenjualan = DetailPenjualan::create([
+                'PenjualanId' => $simpanPenjualan->id,
+                'ProdukId' => $ProdukId,
+                'harga' => $request->harga[$key],
+                'JumlahProduk' => $request->JumlahProduk[$key],
+                'SubTotal' => $request->TotalHarga[$key],
+            ]);  
+        }
+        return redirect()->route('penjualan.index')->with('success', 'Penjualan Berhasil Ditambahkan');
     }
 
     /**
@@ -61,5 +92,48 @@ class PenjualanController extends Controller
     public function destroy(penjualan $penjualan)
     {
         //
+    }
+
+    public function bayarCash($id){
+        $title = 'Penjualan';
+        $subtitle = 'Bayar Cash';
+        $penjualan = Penjualan::find($id);
+        $detailpenjualan = DetailPenjualan::join('produks', 'detail_penjualans.ProdukId', '=', 'produks.id')
+        ->where('PenjualanId', $id)->get();
+        return view('admin.penjualan.bayarCash', compact('title', 'subtitle', 'penjualan', 'detailpenjualan'));
+    }
+
+    public function bayarCashStore(Request $request){
+        $validate = $request->validate([
+            'JumlahBayar' => 'required',
+        ]);
+
+        $simpan = Bayar::create([
+            'PenjualanId' => $request->id,
+            'TanggalBayar' => date('Y-m-d H:i:s'),
+            'TotalBayar' => $request->JumlahBayar,
+            'Kembalian' => $request->Kembalian,
+            'StatusBayar' => 'Lunas',
+            'JenisBayar' => 'Cash',
+        ]);
+        if($simpan){
+            return response()->json(['status' => 200, 'message' => 'Pembayaran Berhasil']);
+        }else{
+            return response()->json(['status' => 500, 'message' => 'Pembayaran Gagal']);
+        }
+    }
+
+    public function nota($id){
+        $penjualan = Penjualan::find($id);
+        $detailpenjualan = DetailPenjualan::join('produks', 'detail_penjualans.ProdukId', '=', 'produks.id')
+        ->where('PenjualanId', $id)->get();
+        $bayar = Bayar::where('PenjualanId', $id)->get();
+        $totalBayar = 0;
+        $kembalian = 0;
+        foreach ($bayar as $item) {
+            $totalBayar = $item->TotalBayar;
+            $kembalian = $item->Kembalian;
+        }
+        return view('admin.penjualan.nota', compact('penjualan', 'detailpenjualan', 'totalBayar', 'kembalian'));
     }
 }

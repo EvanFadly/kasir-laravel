@@ -4,7 +4,7 @@
     <div class="register-box">
       <div class="card card-outline card-primary">
         <div class="card-header text-center">
-          <a href="../../index2.html" class="h1"><b>Kasir</b>Evan</a>
+          <a href="../../index2.html" class="h1"><b>Sign</b>In</a>
         </div>
         <div class="card-body">
           <p class="login-box-msg">Daftar Sebagai Petugas</p>
